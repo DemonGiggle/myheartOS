@@ -58,6 +58,9 @@ start:
   or eax, 1 << 16
   mov cr0, eax
 
+	; Setup GDT
+	lgdt [gdt64.pointer]
+
 
   ; Hello, world!
   mov word [0xb8000], 0x0248  ; H
@@ -84,3 +87,28 @@ p3_table:
   resb 4096
 p2_table:
   resb 4096
+
+section .rodata
+gdt64:
+	dq 0
+
+; set the `.code` label value to the current address minus
+; the address of `gdt64`
+;
+.code: equ $ - gdt64
+	; 44th bit: `descriptor type`, set 1 for code and data segments
+	; 47th bit: `present`, set 1 if the entry is valid
+	; 41th bit: `read/write`, if it is code segment, 1 means it's readable
+	; 43th bit: `executable`, set 1 for code segment
+	; 53th bit: `64-bit`, set 1 if it's a 64-bit GDT
+	dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53)
+
+.data: equ $ - gdt64
+	dq (1<<44) | (1<<47) | (1<<41)
+
+; the pointer contains the length and the address of GDT, the
+; first part is the length (2 bytes); the second one is addr (8 bytes)
+;
+.pointer:
+	dw .pointer - gdt64 - 1 ; the length of GDT
+	dq gdt64
