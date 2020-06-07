@@ -1,4 +1,4 @@
-.PHONY: default build clean build_folder
+.PHONY: default build clean build_folder run
 
 default: build
 
@@ -21,6 +21,9 @@ build/boot.o: boot.asm build_folder
 
 build/kernel.bin: linker.ld build/multiboot_header.o build/boot.o
 	ld -n -o $@ -T $^
+
+run: build/os.iso
+	qemu-system-x86_64 -cdrom build/os.iso
 
 clean:
 	rm -rf build
