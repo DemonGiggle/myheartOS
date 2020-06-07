@@ -1,7 +1,6 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+#![no_std]
+
+#[panic_handler]
+fn rust_begin_panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
 }
