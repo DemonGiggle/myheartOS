@@ -1,29 +1,31 @@
-.PHONY: default build clean build_folder run
+boot_src:=src/boot
 
-default: build
+.PHONY: default target clean target_folder run
 
-build: build/os.iso
+default: target
 
-build_folder:
-	mkdir -p build
+target: target/os.iso
 
-build/os.iso: build/kernel.bin grub.cfg
-	mkdir -p build/isofiles/boot/grub
-	cp grub.cfg build/isofiles/boot/grub
-	cp build/kernel.bin build/isofiles/boot/
-	grub-mkrescue -o $@ build/isofiles
+target_folder:
+	mkdir -p target
 
-build/multiboot_header.o: multiboot_header.asm build_folder
+target/os.iso: target/kernel.bin $(boot_src)/grub.cfg
+	mkdir -p target/isofiles/boot/grub
+	cp $(boot_src)/grub.cfg target/isofiles/boot/grub
+	cp target/kernel.bin target/isofiles/boot/
+	grub-mkrescue -o $@ target/isofiles
+
+target/multiboot_header.o: $(boot_src)/multiboot_header.asm target_folder
 	nasm -f elf64 $< -o $@
 
-build/boot.o: boot.asm build_folder
+target/boot.o: $(boot_src)/boot.asm target_folder
 	nasm -f elf64 $< -o $@
 
-build/kernel.bin: linker.ld build/multiboot_header.o build/boot.o
+target/kernel.bin: $(boot_src)/linker.ld target/multiboot_header.o target/boot.o
 	ld -n -o $@ -T $^
 
-run: build/os.iso
-	qemu-system-x86_64 -cdrom build/os.iso
+run: target/os.iso
+	qemu-system-x86_64 -cdrom target/os.iso
 
 clean:
-	rm -rf build
+	cargo clean
