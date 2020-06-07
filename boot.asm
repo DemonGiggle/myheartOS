@@ -7,7 +7,7 @@ start:
   ; first entry of level 3 table
   mov eax, p3_table                 ; e.g. eax = 0x00001000
   or eax, 0b11                      ; e.g. eax = 0x00001003
-                                    ;      0x3 is `present bit + writable bit`
+  ;      0x3 is `present bit + writable bit`
   mov dword [p4_table + 0], eax     ; e.g. p4_table[0] = eax
 
   ; Point the first entry of level 3 table to the
@@ -22,13 +22,13 @@ start:
   mov eax, 0x200000                 ; 2Mb, each page size
   mul ecx                           ; eax = eax * ecx
   or eax, 0b10000011                ; set `huge page bit`, `present bit` and
-                                    ;     `writable bit`. If no huge bit, we
-                                    ;     only have 4kb size for a page
+            ;     `writable bit`. If no huge bit, we
+            ;     only have 4kb size for a page
   mov [p2_table + ecx * 8], eax     ; each pointer in p2_table is 8 bytes
 
   inc ecx
   cmp ecx, 512                      ; 512 (page entries) * 8 (bytes) = 4096 bytes
-                                    ;     so the total virtual address space is 512 * 2Mb = 1G
+            ;     so the total virtual address space is 512 * 2Mb = 1G
   jne .map_p2_table
 
   ; What we will do to enable paging
@@ -70,7 +70,6 @@ start:
   ; jump to long mode (to modify cs segment)
   jmp gdt64.code:long_mode_start
 
-
 section .bss
 align 4096
 
@@ -83,35 +82,35 @@ p2_table:
 
 section .rodata
 gdt64:
-        dq 0
+  dq 0
 
 ; set the `.code` label value to the current address minus
 ; the address of `gdt64`
 ;
 .code: equ $ - gdt64
-        ; 44th bit: `descriptor type`, set 1 for code and data segments
-        ; 47th bit: `present`, set 1 if the entry is valid
-        ; 41th bit: `read/write`, if it is code segment, 1 means it's readable
-        ; 43th bit: `executable`, set 1 for code segment
-        ; 53th bit: `64-bit`, set 1 if it's a 64-bit GDT
-        dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53)
+  ; 44th bit: `descriptor type`, set 1 for code and data segments
+  ; 47th bit: `present`, set 1 if the entry is valid
+  ; 41th bit: `read/write`, if it is code segment, 1 means it's readable
+  ; 43th bit: `executable`, set 1 for code segment
+    ; 53th bit: `64-bit`, set 1 if it's a 64-bit GDT
+  dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53)
 
 .data: equ $ - gdt64
-        dq (1<<44) | (1<<47) | (1<<41)
+  dq (1<<44) | (1<<47) | (1<<41)
 
 ; the pointer contains the length and the address of GDT, the
 ; first part is the length (2 bytes); the second one is addr (8 bytes)
 ;
 .pointer:
-        dw .pointer - gdt64 - 1 ; the length of GDT
-        dq gdt64
+  dw .pointer - gdt64 - 1 ; the length of GDT
+  dq gdt64
 
 section .text
 bits 64
 long_mode_start:
 
-        ; PRINT OKAY
-        mov rax, 0x2f592f412f4b2f4f
-        mov qword [0xb8000], rax
+  ; PRINT OKAY
+  mov rax, 0x2f592f412f4b2f4f
+  mov qword [0xb8000], rax
 
-        hlt
+  hlt
