@@ -58,25 +58,18 @@ start:
   or eax, 1 << 16
   mov cr0, eax
 
-	; Setup GDT
-	lgdt [gdt64.pointer]
+  ; Setup GDT
+  lgdt [gdt64.pointer]
 
+  ; update selector
+  mov ax, gdt64.data
+  mov ss, ax
+  mov ds, ax
+  mov es, ax
 
-  ; Hello, world!
-  mov word [0xb8000], 0x0248  ; H
-  mov word [0xb8002], 0x0265  ; e
-  mov word [0xb8004], 0x026c  ; l
-  mov word [0xb8006], 0x026c  ; l
-  mov word [0xb8008], 0x026f  ; o
-  mov word [0xb800a], 0x022c  ; ,
-  mov word [0xb800c], 0x0220  ;
-  mov word [0xb800e], 0x4277  ; w
-  mov word [0xb8010], 0x026f  ; o
-  mov word [0xb8012], 0x0272  ; r
-  mov word [0xb8014], 0x026c  ; l
-  mov word [0xb8016], 0x0264  ; d
-  mov word [0xb8018], 0x0221  ; !
-  hlt
+  ; jump to long mode (to modify cs segment)
+  jmp gdt64.code:long_mode_start
+
 
 section .bss
 align 4096
@@ -90,25 +83,35 @@ p2_table:
 
 section .rodata
 gdt64:
-	dq 0
+        dq 0
 
 ; set the `.code` label value to the current address minus
 ; the address of `gdt64`
 ;
 .code: equ $ - gdt64
-	; 44th bit: `descriptor type`, set 1 for code and data segments
-	; 47th bit: `present`, set 1 if the entry is valid
-	; 41th bit: `read/write`, if it is code segment, 1 means it's readable
-	; 43th bit: `executable`, set 1 for code segment
-	; 53th bit: `64-bit`, set 1 if it's a 64-bit GDT
-	dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53)
+        ; 44th bit: `descriptor type`, set 1 for code and data segments
+        ; 47th bit: `present`, set 1 if the entry is valid
+        ; 41th bit: `read/write`, if it is code segment, 1 means it's readable
+        ; 43th bit: `executable`, set 1 for code segment
+        ; 53th bit: `64-bit`, set 1 if it's a 64-bit GDT
+        dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53)
 
 .data: equ $ - gdt64
-	dq (1<<44) | (1<<47) | (1<<41)
+        dq (1<<44) | (1<<47) | (1<<41)
 
 ; the pointer contains the length and the address of GDT, the
 ; first part is the length (2 bytes); the second one is addr (8 bytes)
 ;
 .pointer:
-	dw .pointer - gdt64 - 1 ; the length of GDT
-	dq gdt64
+        dw .pointer - gdt64 - 1 ; the length of GDT
+        dq gdt64
+
+section .text
+bits 64
+long_mode_start:
+
+        ; PRINT OKAY
+        mov rax, 0x2f592f412f4b2f4f
+        mov qword [0xb8000], rax
+
+        hlt
